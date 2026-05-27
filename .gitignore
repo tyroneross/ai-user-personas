@@ -1,0 +1,15 @@
+node_modules
+.next
+.next/
+out
+dist
+.DS_Store
+*.log
+.env*.local
+.vercel
+tsconfig.tsbuildinfo
+
+# tool artifacts
+.ibr/
+.build-loop/
+.agent-rally-point/
