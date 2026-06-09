@@ -13,3 +13,6 @@ tsconfig.tsbuildinfo
 .ibr/
 .build-loop/
 .agent-rally-point/
+
+# Rally coordination room — runtime state, never commit (per agent-rally-point test.jsonl pollution lesson)
+.rally/
