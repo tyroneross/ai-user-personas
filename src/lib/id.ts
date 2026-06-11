@@ -20,10 +20,14 @@ function hex8(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+export function prefixedId(prefix: string, label: string): string {
+  return `${prefix}_${slugify(label)}_${hex8()}`;
+}
+
 export function personaId(name: string): string {
-  return `persona_${slugify(name)}_${hex8()}`;
+  return prefixedId("persona", name);
 }
 
 export function evidenceId(title: string): string {
-  return `evidence_${slugify(title)}_${hex8()}`;
+  return prefixedId("evidence", title);
 }

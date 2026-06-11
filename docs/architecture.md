@@ -3,13 +3,18 @@
 ## Bottom Line
 
 Build the first version as a local-first persona workspace with a stable persona
-contract, a thin repository boundary, and UI screens that can run from mock data
-until persistence and generation are wired.
+contract, a thin repository boundary, and council-review screens backed by
+local JSON persistence.
 
 The core architecture decision is to separate the persona domain from the UI:
 Claude can build list/detail/editor screens against the schema now, while Codex
 keeps the data model, validation rules, persistence boundary, and future
 generation pipeline explicit.
+
+The persona-review council capability now sits beside the base persona
+workspace. It owns repo rosters, review runs, measurement plans, assignments,
+findings, synthesis, prompt comparisons, and Agent Builder-style export
+packages through `src/lib/council.ts` and the council repository boundary.
 
 ## V1 Scope
 
@@ -20,6 +25,11 @@ In scope:
 - Support UI filtering by status, tags, role, confidence, and source type.
 - Keep the app usable without a backend by starting with a repository adapter.
 - Leave room for later AI-assisted persona generation without blocking the UI.
+- Plan low, medium, and high-depth persona review councils.
+- Persist council rosters and review runs in local JSON files.
+- Show evidence gaps, synthetic disclosure, confidence, and status in the
+  `/councils` UI.
+- Export council runs as markdown and Agent Builder-style JSON packages.
 
 Out of scope for the first pass:
 
@@ -35,8 +45,15 @@ UI shell
   -> PersonaRepository interface
     -> Local fixture adapter for first UI build
     -> Browser storage or file-backed adapter for first persistence pass
+  -> CouncilRepository interface
+    -> File-backed council roster/run adapter
+    -> Deterministic persona-plan adapter
+    -> Command-packet and export adapters
   -> Persona domain validation
     -> schemas/persona.schema.json
+  -> Council domain validation
+    -> schemas/persona-roster.schema.json
+    -> schemas/persona-review-run.schema.json
   -> Future generation pipeline
     -> raw inputs -> evidence items -> persona draft -> reviewed persona
 ```
@@ -101,13 +118,24 @@ type PersonaRepository = {
 };
 ```
 
-First implementation options:
+Implementation options by surface:
 
-- UI-only scaffold: static fixture data that conforms to the schema.
-- Browser-first app: localStorage adapter with import/export JSON.
-- Next.js/API app: file-backed JSON adapter behind `/api/personas`.
+- Base persona scaffold: static fixture data that conforms to the persona
+  schema until `data/personas.json` is wired.
+- Browser-first persona app: localStorage adapter with import/export JSON.
+- Next.js/API persona app: file-backed JSON adapter behind `/api/personas`.
+- Council workflow: file-backed JSON adapter behind server actions and
+  `/councils` routes.
 
 The UI should not care which adapter is active.
+
+Council reviews use the same boundary rule. `CouncilRepository` owns roster,
+run, measurement-plan, assignment, finding, synthesis, prompt-version,
+outcome-comparison, and event records. The file-backed server adapter reads
+`data/council-rosters.json` and `data/council-runs.json`, seeds the first
+review from fixtures when the files are empty, validates writes, writes via a
+temporary file and rename, and rejects stale status transitions when the loaded
+`updated_at` timestamp no longer matches.
 
 ## V1 Implementation Decisions
 
@@ -122,7 +150,10 @@ Approved V1 storage:
 
 - Use local file-backed JSON behind the repository boundary.
 - Store canonical records in `data/personas.json` once persistence is added.
-- Seed the first UI with static fixture data if persistence is not ready yet.
+- Store council records in `data/council-rosters.json` and
+  `data/council-runs.json`.
+- The base persona UI may continue to use static fixtures until persona
+  persistence lands; the council UI uses file-backed JSON with fixture seeding.
 - Defer SQLite, Drizzle, Neon, and external databases until the local JSON
   adapter becomes a real constraint.
 
@@ -185,12 +216,12 @@ Claude should build the first UI shell around these contract-backed screens:
 - Empty state: prompt to create or import the first persona.
 - Error state: readable repository/validation error with retry where relevant.
 
-The UI can start with static fixture data as long as the fixture validates
-against the schema.
+The base persona UI can start with static fixture data as long as the fixture
+validates against the schema. The council UI should use the council repository
+and local JSON files so run creation and status transitions persist.
 
 ## Open Decisions
 
 - AI generation should remain behind a draft/review boundary. No generated
   persona should become active without human acceptance.
-- The first persistence implementation still needs an owner and exact module
-  path after the UI scaffold lands.
+- Base persona persistence still needs an owner and exact module path.

@@ -14,6 +14,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <nav aria-label="Primary" className="flex flex-wrap items-center gap-3">
             <Link
+              href="/councils"
+              className="inline-flex items-center rounded-md border border-line bg-surface px-3 py-2 text-sm font-medium text-ink hover:border-line-strong transition"
+            >
+              Councils
+            </Link>
+            <Link
               href="/competitive-research"
               className="inline-flex items-center rounded-md border border-line bg-surface px-3 py-2 text-sm font-medium text-ink hover:border-line-strong transition"
             >
@@ -33,7 +39,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
       </main>
       <footer className="border-t border-line bg-surface">
         <div className="mx-auto max-w-6xl px-6 py-3 text-xs text-muted">
-          Local-first workspace. Fixture data shown until persistence lands.
+          Local-first workspace. Fixture data seeds the first review; new
+          council runs persist to local JSON.
         </div>
       </footer>
     </div>

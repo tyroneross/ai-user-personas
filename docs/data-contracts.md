@@ -2,13 +2,15 @@
 
 ## Bottom Line
 
-The first UI should build against one canonical `Persona` JSON contract plus a
-thin repository/API boundary. The UI can use fixture data immediately, then swap
-in persistence without changing component-level data assumptions.
+The first UI builds against one canonical `Persona` JSON contract plus a thin
+repository/API boundary. Base persona screens can still use fixture data, while
+the persona council workflow uses local JSON persistence through server actions.
 
 Canonical schema:
 
 - `schemas/persona.schema.json`
+- `schemas/persona-roster.schema.json`
+- `schemas/persona-review-run.schema.json`
 
 ## Persona Entity
 
@@ -123,6 +125,73 @@ type PersonaRepository = {
 Create and update inputs should accept editable fields only. The repository owns
 `id`, `schema_version`, `created_at`, and `updated_at`.
 
+## Persona Council Contracts
+
+Persona councils are the product workflow for repo-specific synthetic persona
+reviews. They sit beside the base `Persona` contract and are owned by
+`src/lib/council.ts`.
+
+### RepoPersonaRoster
+
+Required fields:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `schema_version` | string | Current value: `1.0.0`. |
+| `id` | string | Stable id, format `roster_<repo-slug>_<suffix>`. |
+| `repo_path` | string | Local repository path. |
+| `repo_slug` | string | Repository slug used for display and ids. |
+| `source_summary` | string | How the roster was generated or curated. |
+| `personas` | array | Roster personas with lens, role, JTBD, decision power, failure modes, and evidence expectations. |
+| `default_levels` | object | Persona ids for `low`, `medium`, and `high` review depth. |
+| `generated_from` | array | Files, scripts, or prior artifacts used to create the roster. |
+| `user_overrides` | array | User-authored changes to generated defaults. |
+| `created_at` / `updated_at` | string | ISO 8601 date-time. |
+
+Review-depth bounds:
+
+| Level | Persona Count |
+| --- | --- |
+| `low` | 2-3 |
+| `medium` | 4-7 |
+| `high` | 8-20 |
+
+### PersonaReviewRun
+
+Required fields:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `schema_version` | string | Current value: `1.0.0`. |
+| `id` | string | Stable run id. |
+| `repo_path` | string | Local repository path. |
+| `request` | string | User review request. |
+| `council_type` | enum | `ui_test`, `decision`, `strategy`, `prompt`, `research`, `architecture`, or `competitive`. |
+| `level` | enum | `low`, `medium`, or `high`. |
+| `target_artifacts` | array | Files, docs, flows, or product surfaces under review. |
+| `roster_id` | string | Selected roster. |
+| `persona_ids` | array | Selected reviewer personas. |
+| `measurement_plan_id` | string | Pre-registered measurement plan. |
+| `status` | enum | `draft`, `ready`, `running`, `needs_evidence`, `synthesizing`, `complete`, or `archived`. |
+| `coordination_mode` | enum | `local`, `host_subagents`, or `rally`. |
+| `created_at` / `updated_at` | string | ISO 8601 date-time. |
+
+Related records:
+
+| Record | Purpose |
+| --- | --- |
+| `PersonaMeasurementPlan` | Decision supported, target artifact, success/failure signals, evidence required, confidence policy, synthetic policy, and quality gate. |
+| `PersonaAssignment` | One persona's model tier, prompt version, status, output path, and evidence gaps. |
+| `PersonaFinding` | Claim, severity, evidence/source/assumption support, confidence split, synthetic disclosure, and recommended action. |
+| `PersonaSynthesis` | Top findings, dissent, evidence gaps, confidence downgrade reasons, next actions, and decision recommendation. |
+| `PromptVersion` | Run-scoped prompt family, model tier, source tool, score, and changelog. |
+| `OutcomeComparison` | Baseline, Prompt Builder, and Agent Builder-style comparison notes. |
+| `RunEvent` | Local audit log for status transitions and generated artifacts. |
+
+Synthetic or mixed evidence must stay visible through `behavior_source` and
+`is_synthetic_disclosed`. Findings must cite at least one evidence id, source
+URI, or explicit assumption.
+
 ## Storage Contract
 
 V1 should use local file-backed JSON once persistence is implemented.
@@ -130,6 +199,8 @@ V1 should use local file-backed JSON once persistence is implemented.
 Storage path:
 
 - `data/personas.json`
+- `data/council-rosters.json`
+- `data/council-runs.json`
 
 Shape:
 
@@ -143,10 +214,19 @@ Shape:
 Rules:
 
 - `personas` contains canonical `Persona[]` records.
+- `council-rosters.json` contains canonical `RepoPersonaRoster[]` records.
+- `council-runs.json` contains runs plus measurement plans, assignments,
+  findings, syntheses, prompt versions, outcome comparisons, and events.
 - Writes should validate each persona against `schemas/persona.schema.json`.
+- Council writes should validate the relevant domain object and write by
+  temporary file plus atomic rename.
+- Status updates should include the loaded `updated_at` timestamp when possible
+  so stale transitions can be rejected.
 - Updates should replace one persona by `id`, not rewrite ids.
 - Archive should set `status: "archived"` and update `updated_at`.
-- The UI may use static fixture data before this file exists.
+- Base persona screens may use static fixture data before `data/personas.json`
+  exists. Council screens should use the council repository and local JSON
+  files, seeded from fixtures only when those files are empty.
 
 ID rules:
 
