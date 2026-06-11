@@ -17,17 +17,6 @@ import type {
   RunStatusUpdateInput,
   ReviewRunStatus,
 } from "./council";
-import {
-  fixtureAssignments,
-  fixtureCouncilRoster,
-  fixtureCouncilRun,
-  fixtureFindings,
-  fixtureMeasurementPlan,
-  fixtureOutcomeComparison,
-  fixturePromptVersions,
-  fixtureRunEvents,
-  fixtureSynthesis,
-} from "./council-fixtures";
 import { canTransitionStatus, assertValid, validateMeasurementPlan, validateRoster, validateRun } from "./council-validation";
 import { prefixedId } from "./id";
 
@@ -109,22 +98,22 @@ function matchesRun(run: PersonaReviewRun, filters: PersonaReviewRunFilters): bo
   return true;
 }
 
-export function createDefaultCouncilStore(): CouncilRepositoryStore {
+export function createEmptyCouncilStore(): CouncilRepositoryStore {
   return {
-    rosters: [clone(fixtureCouncilRoster)],
-    runs: [clone(fixtureCouncilRun)],
-    measurementPlans: [clone(fixtureMeasurementPlan)],
-    assignments: clone(fixtureAssignments),
-    findings: clone(fixtureFindings),
-    syntheses: [clone(fixtureSynthesis)],
-    promptVersions: clone(fixturePromptVersions),
-    outcomeComparisons: [clone(fixtureOutcomeComparison)],
-    events: clone(fixtureRunEvents),
+    rosters: [],
+    runs: [],
+    measurementPlans: [],
+    assignments: [],
+    findings: [],
+    syntheses: [],
+    promptVersions: [],
+    outcomeComparisons: [],
+    events: [],
   };
 }
 
-export function createFixtureCouncilRepository(
-  initialStore: CouncilRepositoryStore = createDefaultCouncilStore(),
+export function createCouncilRepository(
+  initialStore: CouncilRepositoryStore = createEmptyCouncilStore(),
 ): CouncilRepository {
   const store = initialStore;
 
@@ -304,4 +293,4 @@ export function createFixtureCouncilRepository(
   };
 }
 
-export const councilRepository: CouncilRepository = createFixtureCouncilRepository();
+export const councilRepository: CouncilRepository = createCouncilRepository();

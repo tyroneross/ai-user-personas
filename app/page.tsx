@@ -1,11 +1,11 @@
-import { repository } from "@lib/repository";
+import { filePersonaRepository } from "@lib/persona-repository.server";
 import PersonaList from "@components/PersonaList";
 import EmptyState from "@components/EmptyState";
 
 export const dynamic = "force-dynamic";
 
 export default async function PersonasIndexPage() {
-  const personas = await repository.listPersonas();
+  const personas = await filePersonaRepository.listPersonas();
 
   if (personas.length === 0) {
     return (

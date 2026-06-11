@@ -1,6 +1,10 @@
 # Persona Councils
 
-Turn the AI User Personas (`src/lib/fixtures.ts`) into deliberating agents.
+Turn saved AI User Personas (`data/personas.json`) into deliberating agents.
+
+Historical council run artifacts may mention removed prototype fixture files.
+Current app state lives in local JSON data files and does not import those
+artifacts automatically.
 
 - **Decision council** — personas rank/veto options; tally + synthesize a decision.
 - **Strategy council** — personas debate a strategy question from their POV.

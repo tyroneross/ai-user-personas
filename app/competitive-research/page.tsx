@@ -1,6 +1,6 @@
 import Link from "next/link";
 import PersonaCard from "@components/PersonaCard";
-import { repository } from "@lib/repository";
+import { filePersonaRepository } from "@lib/persona-repository.server";
 import type { PersonaSummary } from "@lib/persona";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,7 @@ function countByStatus(personas: PersonaSummary[], status: PersonaSummary["statu
 }
 
 export default async function CompetitiveResearchPage() {
-  const personas = await repository.listPersonas({
+  const personas = await filePersonaRepository.listPersonas({
     tags: ["competitive-research"],
   });
   const activeCount = countByStatus(personas, "active");

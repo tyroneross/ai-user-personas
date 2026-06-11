@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Persona } from "@lib/persona";
+import type { Persona, SourceType } from "@lib/persona";
 
 type Mode = "create" | "edit";
 
@@ -55,7 +55,7 @@ function initialFor(persona: Persona | undefined): FormState {
       .map((s) => `${s.title} :: ${s.description}`)
       .join("\n"),
     evidence_summary: persona?.evidence?.[0]?.summary ?? "",
-    evidence_source: persona?.evidence?.[0]?.source_type ?? "synthetic",
+    evidence_source: persona?.evidence?.[0]?.source_type ?? "interview",
     confidence: persona?.confidence ?? 0.5,
     tags: (persona?.tags ?? []).join(", "),
     status: persona?.status ?? "draft",
@@ -66,6 +66,7 @@ type Errors = Partial<Record<keyof FormState, string>>;
 
 function validate(state: FormState): Errors {
   const errs: Errors = {};
+  const scenarioLines = lines(state.scenarios);
   if (!state.name.trim()) errs.name = "Name is required.";
   if (!state.archetype.trim()) errs.archetype = "Archetype is required.";
   if (!state.role.trim()) errs.role = "Role is required.";
@@ -80,13 +81,58 @@ function validate(state: FormState): Errors {
   if (lines(state.behaviors).length === 0)
     errs.behaviors = "Add at least one behavior.";
   if (lines(state.needs).length === 0) errs.needs = "Add at least one need.";
-  if (lines(state.scenarios).length === 0)
+  if (scenarioLines.length === 0) {
     errs.scenarios = "Add at least one scenario (title :: description).";
+  } else if (
+    scenarioLines.some((line) => {
+      const [title, ...descriptionParts] = line.split("::");
+      return !title.trim() || descriptionParts.join("::").trim().length < 20;
+    })
+  ) {
+    errs.scenarios = "Use title :: description with a description of at least 20 characters.";
+  }
   if (state.evidence_summary.trim().length < 20)
     errs.evidence_summary = "Evidence summary must be at least 20 characters.";
   if (state.confidence < 0 || state.confidence > 1)
     errs.confidence = "Confidence must be between 0 and 1.";
   return errs;
+}
+
+function parseScenarios(value: string) {
+  return lines(value).map((line) => {
+    const [title, ...descriptionParts] = line.split("::");
+    return {
+      title: title.trim(),
+      description: descriptionParts.join("::").trim(),
+    };
+  });
+}
+
+function buildPersonaPayload(state: FormState, initial?: Persona) {
+  return {
+    name: state.name.trim(),
+    archetype: state.archetype.trim(),
+    role: state.role.trim(),
+    summary: state.summary.trim(),
+    primary_goal: state.primary_goal.trim(),
+    goals: lines(state.goals),
+    frustrations: lines(state.frustrations),
+    motivations: lines(state.motivations),
+    behaviors: lines(state.behaviors),
+    needs: lines(state.needs),
+    scenarios: parseScenarios(state.scenarios),
+    evidence: [
+      {
+        id: initial?.evidence?.[0]?.id,
+        source_type: state.evidence_source as SourceType,
+        summary: state.evidence_summary.trim(),
+        confidence: state.confidence,
+      },
+    ],
+    confidence: state.confidence,
+    tags: csv(state.tags),
+    status: state.status,
+  };
 }
 
 export default function PersonaForm({
@@ -123,11 +169,27 @@ export default function PersonaForm({
     setSubmitError(null);
     if (Object.keys(errors).length > 0) return;
 
-    // V1 has no persistence wired; the editor confirms the contract shape
-    // and surfaces validation. Persistence is Codex's next handoff.
-    setSubmitError(
-      "Persistence is not wired yet. Editor validated the contract; coordinate with codex to land the repository writer."
-    );
+    try {
+      const response = await fetch(
+        mode === "create" ? "/api/personas" : `/api/personas/${initial?.id}`,
+        {
+          method: mode === "create" ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ persona: buildPersonaPayload(state, initial) }),
+        },
+      );
+      const body = (await response.json()) as {
+        persona?: Persona;
+        error?: { message?: string };
+      };
+      if (!response.ok || !body.persona) {
+        throw new Error(body.error?.message ?? "Persona save failed.");
+      }
+      router.push(`/personas/${body.persona.id}`);
+      router.refresh();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Persona save failed.");
+    }
   }
 
   return (

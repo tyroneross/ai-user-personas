@@ -3,8 +3,9 @@
 ## Bottom Line
 
 The first UI builds against one canonical `Persona` JSON contract plus a thin
-repository/API boundary. Base persona screens can still use fixture data, while
-the persona council workflow uses local JSON persistence through server actions.
+repository/API boundary. Base persona screens and persona council screens use
+local JSON persistence; fixture personas must not appear as user-facing app
+state.
 
 Canonical schema:
 
@@ -224,9 +225,13 @@ Rules:
   so stale transitions can be rejected.
 - Updates should replace one persona by `id`, not rewrite ids.
 - Archive should set `status: "archived"` and update `updated_at`.
-- Base persona screens may use static fixture data before `data/personas.json`
-  exists. Council screens should use the council repository and local JSON
-  files, seeded from fixtures only when those files are empty.
+- Base persona screens read and write `data/personas.json` through the persona
+  repository and `/api/personas`. The file may be empty, but it is still the
+  source of truth.
+- Council screens use the council repository and local JSON files. Empty roster
+  or run files must show empty UI states instead of hidden sample data.
+- Local JSON is durable on a persistent filesystem. Cloud/serverless deployment
+  needs a database or other durable storage adapter before production use.
 
 ID rules:
 

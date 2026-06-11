@@ -21,8 +21,8 @@ import type {
   ReviewRunStatus,
 } from "./council";
 import {
-  createDefaultCouncilStore,
-  createFixtureCouncilRepository,
+  createCouncilRepository,
+  createEmptyCouncilStore,
   type CouncilRepository,
   type CouncilRepositoryStore,
 } from "./council-repository";
@@ -58,11 +58,11 @@ async function readJson<T>(filePath: string, fallback: T): Promise<T> {
 }
 
 function defaultRosterFile(): RosterFile {
-  return { schema_version: "1.0.0", rosters: createDefaultCouncilStore().rosters };
+  return { schema_version: "1.0.0", rosters: [] };
 }
 
 function defaultRunsFile(): RunsFile {
-  const store = createDefaultCouncilStore();
+  const store = createEmptyCouncilStore();
   return {
     schema_version: "1.0.0",
     runs: store.runs,
@@ -79,22 +79,16 @@ function defaultRunsFile(): RunsFile {
 async function readStore(): Promise<CouncilRepositoryStore> {
   const rosterFile = await readJson<RosterFile>(rostersPath, defaultRosterFile());
   const runsFile = await readJson<RunsFile>(runsPath, defaultRunsFile());
-  const seeded = createDefaultCouncilStore();
   return {
-    rosters: rosterFile.rosters.length > 0 ? rosterFile.rosters : seeded.rosters,
-    runs: runsFile.runs.length > 0 ? runsFile.runs : seeded.runs,
-    measurementPlans:
-      runsFile.measurementPlans.length > 0 ? runsFile.measurementPlans : seeded.measurementPlans,
-    assignments: runsFile.assignments.length > 0 ? runsFile.assignments : seeded.assignments,
-    findings: runsFile.findings.length > 0 ? runsFile.findings : seeded.findings,
-    syntheses: runsFile.syntheses.length > 0 ? runsFile.syntheses : seeded.syntheses,
-    promptVersions:
-      runsFile.promptVersions.length > 0 ? runsFile.promptVersions : seeded.promptVersions,
-    outcomeComparisons:
-      runsFile.outcomeComparisons.length > 0
-        ? runsFile.outcomeComparisons
-        : seeded.outcomeComparisons,
-    events: runsFile.events.length > 0 ? runsFile.events : seeded.events,
+    rosters: rosterFile.rosters,
+    runs: runsFile.runs,
+    measurementPlans: runsFile.measurementPlans,
+    assignments: runsFile.assignments,
+    findings: runsFile.findings,
+    syntheses: runsFile.syntheses,
+    promptVersions: runsFile.promptVersions,
+    outcomeComparisons: runsFile.outcomeComparisons,
+    events: runsFile.events,
   };
 }
 
@@ -125,12 +119,12 @@ async function writeStore(store: CouncilRepositoryStore): Promise<void> {
 
 async function withRead<T>(fn: (repo: CouncilRepository) => Promise<T>): Promise<T> {
   const store = await readStore();
-  return fn(createFixtureCouncilRepository(store));
+  return fn(createCouncilRepository(store));
 }
 
 async function withWrite<T>(fn: (repo: CouncilRepository) => Promise<T>): Promise<T> {
   const store = await readStore();
-  const result = await fn(createFixtureCouncilRepository(store));
+  const result = await fn(createCouncilRepository(store));
   await writeStore(store);
   return result;
 }

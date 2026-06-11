@@ -3,8 +3,8 @@
 ## Bottom Line
 
 Build the first version as a local-first persona workspace with a stable persona
-contract, a thin repository boundary, and council-review screens backed by
-local JSON persistence.
+contract, a thin repository boundary, and local JSON persistence for both base
+personas and council-review screens.
 
 The core architecture decision is to separate the persona domain from the UI:
 Claude can build list/detail/editor screens against the schema now, while Codex
@@ -43,8 +43,7 @@ Out of scope for the first pass:
 ```text
 UI shell
   -> PersonaRepository interface
-    -> Local fixture adapter for first UI build
-    -> Browser storage or file-backed adapter for first persistence pass
+    -> File-backed local JSON adapter
   -> CouncilRepository interface
     -> File-backed council roster/run adapter
     -> Deterministic persona-plan adapter
@@ -118,12 +117,9 @@ type PersonaRepository = {
 };
 ```
 
-Implementation options by surface:
+Implementation by surface:
 
-- Base persona scaffold: static fixture data that conforms to the persona
-  schema until `data/personas.json` is wired.
-- Browser-first persona app: localStorage adapter with import/export JSON.
-- Next.js/API persona app: file-backed JSON adapter behind `/api/personas`.
+- Base persona app: file-backed JSON adapter behind `/api/personas`.
 - Council workflow: file-backed JSON adapter behind server actions and
   `/councils` routes.
 
@@ -132,10 +128,11 @@ The UI should not care which adapter is active.
 Council reviews use the same boundary rule. `CouncilRepository` owns roster,
 run, measurement-plan, assignment, finding, synthesis, prompt-version,
 outcome-comparison, and event records. The file-backed server adapter reads
-`data/council-rosters.json` and `data/council-runs.json`, seeds the first
-review from fixtures when the files are empty, validates writes, writes via a
-temporary file and rename, and rejects stale status transitions when the loaded
-`updated_at` timestamp no longer matches.
+`data/council-rosters.json` and `data/council-runs.json`, validates writes,
+writes via a temporary file and rename, and rejects stale status transitions
+when the loaded `updated_at` timestamp no longer matches. Empty council JSON
+files produce empty council screens; the app does not import sample rosters or
+runs as live state.
 
 ## V1 Implementation Decisions
 
@@ -149,11 +146,14 @@ Approved UI stack:
 Approved V1 storage:
 
 - Use local file-backed JSON behind the repository boundary.
-- Store canonical records in `data/personas.json` once persistence is added.
+- Store canonical persona records in `data/personas.json`.
 - Store council records in `data/council-rosters.json` and
   `data/council-runs.json`.
-- The base persona UI may continue to use static fixtures until persona
-  persistence lands; the council UI uses file-backed JSON with fixture seeding.
+- Do not seed base persona records from fixtures. An `active` persona should be
+  a saved app record.
+- Do not seed council rosters or runs from fixtures. Historical council
+  artifacts can remain in `councils/` for audit context, but they are not live
+  app state unless explicitly imported.
 - Defer SQLite, Drizzle, Neon, and external databases until the local JSON
   adapter becomes a real constraint.
 
@@ -216,12 +216,15 @@ Claude should build the first UI shell around these contract-backed screens:
 - Empty state: prompt to create or import the first persona.
 - Error state: readable repository/validation error with retry where relevant.
 
-The base persona UI can start with static fixture data as long as the fixture
-validates against the schema. The council UI should use the council repository
-and local JSON files so run creation and status transitions persist.
+The base persona UI must use the persona repository and local JSON file so
+create/edit/archive actions persist. Fixture personas are not user-facing app
+state. The same rule applies to councils: roster and run screens should reflect
+only `data/council-rosters.json` and `data/council-runs.json`.
 
 ## Open Decisions
 
 - AI generation should remain behind a draft/review boundary. No generated
   persona should become active without human acceptance.
-- Base persona persistence still needs an owner and exact module path.
+- Cloud deployment needs a durable storage adapter before production use. Local
+  JSON is appropriate for local dogfooding and persistent-filesystem hosts, not
+  serverless or immutable deployments.

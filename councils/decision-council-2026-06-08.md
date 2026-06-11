@@ -1,9 +1,10 @@
 # Decision Council — Easy Terminal next-iteration priority (2026-06-08)
 
-Persona-driven decision council. 6 personas defined in `src/lib/fixtures.ts`; this
-run convened 4 as council members (≤4 parallel, rally-workflows Tier-1). Each gave
-an INDEPENDENT position (parallel, no cross-anchoring), then a deterministic tally
-+ synthesis produced the decision.
+Persona-driven decision council. This historical run used the old
+`src/lib/fixtures.ts` prototype file before base personas moved to
+`data/personas.json`; it convened 4 council members (≤4 parallel,
+rally-workflows Tier-1). Each gave an INDEPENDENT position (parallel, no
+cross-anchoring), then a deterministic tally + synthesis produced the decision.
 
 ## Question
 What should be the #1 priority for the next Easy Terminal iteration?

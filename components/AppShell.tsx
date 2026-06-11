@@ -39,8 +39,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
       </main>
       <footer className="border-t border-line bg-surface">
         <div className="mx-auto max-w-6xl px-6 py-3 text-xs text-muted">
-          Local-first workspace. Fixture data seeds the first review; new
-          council runs persist to local JSON.
+          Local-first workspace. Personas, rosters, and council runs persist to
+          local JSON.
         </div>
       </footer>
     </div>

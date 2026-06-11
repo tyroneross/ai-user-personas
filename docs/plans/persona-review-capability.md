@@ -168,7 +168,7 @@ findings, synthesis, and outcome tracking.
     {
       "id": "T-01",
       "name": "Schema/type contract check",
-      "pass": "TypeScript accepts council domain types and sample fixtures without widening to any."
+      "pass": "TypeScript accepts council domain types and local JSON persistence without widening to any."
     },
     {
       "id": "T-02",
@@ -241,7 +241,7 @@ findings, synthesis, and outcome tracking.
 | Decision | Status | Rationale |
 | --- | --- | --- |
 | Analytical lens: QFD plus Pugh | Locked | QFD maps user needs to product features; Pugh compares Native, Prompt Builder, and Agent Builder lanes. |
-| Local-first V1 | Locked | Existing app architecture already uses a local repository boundary and fixture data. |
+| Local-first V1 | Locked | Existing app architecture uses a local repository boundary and JSON persistence. |
 | App owns council records | Locked | Roster, run, assignment, finding, synthesis, and outcome records are the product core. |
 | Prompt Builder is a quality lane | Locked | It should score and version prompts for medium/high reviews, not replace run storage or UI. |
 | Agent Builder-style export is P1/P2 | Locked | Useful for reusable packages later, but heavier than the V1 workflow needs. |
@@ -286,7 +286,7 @@ findings, synthesis, and outcome tracking.
 | WP | Subject | Files owned | Depends on | Risk | dispatch_tier |
 | --- | --- | --- | --- | --- | --- |
 | WP-01 | `feat(councils): add domain contracts and schemas` | `src/lib/council.ts`, `schemas/persona-roster.schema.json`, `schemas/persona-review-run.schema.json` | none | risk_reason: persistence contract | sonnet - schema semantics need judgment and traceability. |
-| WP-02 | `feat(councils): add local repositories and fixtures` | `src/lib/council-repository.ts`, `src/lib/council-fixtures.ts`, `data/council-rosters.json`, `data/council-runs.json` | WP-01 | risk_reason: persistence contract | sonnet - local persistence and conflict behavior need careful review. |
+| WP-02 | `feat(councils): add local repositories and JSON persistence` | `src/lib/council-repository.ts`, `src/lib/council-repository.server.ts`, `data/council-rosters.json`, `data/council-runs.json` | WP-01 | risk_reason: persistence contract | sonnet - local persistence and conflict behavior need careful review. |
 | WP-03 | `feat(councils): add coordination UI routes` | `app/councils/page.tsx`, `app/councils/new/page.tsx`, `app/councils/[runId]/page.tsx`, `components/*Council*.tsx`, `components/AppShell.tsx` | WP-01, WP-02 | risk_reason: user trust claim | sonnet - UI and trust states need product judgment. |
 | WP-04 | `feat(councils): adapt persona-plan into draft rosters and runs` | `src/lib/persona-plan-adapter.ts`, `plugins/persona-lab/scripts/persona-plan.mjs` only if needed | WP-01, WP-02 | none | haiku - mostly deterministic adapter if script output is stable. |
 | WP-05 | `feat(councils): add findings, synthesis, and outcome tracking` | `src/lib/council.ts`, `src/lib/council-repository.ts`, `components/*Finding*.tsx`, `components/*Synthesis*.tsx` | WP-03 | risk_reason: user trust claim | sonnet - evidence and confidence copy affects user trust. |
@@ -328,16 +328,14 @@ Acceptance:
 - `node --test` for pure validation helpers, if helpers are added.
 - `git diff --check`
 
-### WP-02: Local Repositories and Fixtures
+### WP-02: Local Repositories and JSON Persistence
 
 Add repository boundaries equivalent to the current persona repository.
 
 Target modules:
 
 - `src/lib/council-repository.ts`: repository interface and in-memory adapter.
-- `src/lib/council-fixtures.ts`: initial roster, run, assignment, and finding
-  fixtures from the existing council artifacts.
-- `src/lib/council-repository.server.ts`: only if file-backed writes are added.
+- `src/lib/council-repository.server.ts`: file-backed server adapter.
 
 Initial storage:
 
@@ -357,7 +355,8 @@ Acceptance:
 
 - Repository tests cover create, read, update, archive, export, stale write
   rejection, and invalid status transitions.
-- Fixtures render through the UI without schema/type changes.
+- Empty JSON files render empty UI states instead of hidden sample data.
+- Persisted rosters and runs render through the UI without schema/type changes.
 
 ### WP-03: HTML Coordination UI
 
@@ -408,7 +407,7 @@ Required controls:
 
 Acceptance:
 
-- UI renders with fixture data.
+- UI renders empty states and persisted local JSON data.
 - `npm run typecheck`
 - `npm run build`
 - Browser verification at desktop and mobile widths once implementation starts.
@@ -481,7 +480,7 @@ Outcome tracking:
 
 Acceptance:
 
-- Completed fixture run shows findings, dissent, and evidence gaps.
+- Completed persisted run shows findings, dissent, and evidence gaps.
 - Synthetic-heavy run displays warning block, not just a badge.
 - Findings can be exported as Markdown.
 
@@ -532,8 +531,8 @@ Acceptance:
 | Draft run creation | User can create a draft run with request, level, council type, targets, personas, and measurement plan. | Manual UI test plus repository test |
 | Trust visibility | Synthetic status, evidence gaps, and confidence downgrades are visible on run detail. | Browser screenshot inspection |
 | Dry-run launch | UI shows generated local/Rally command packet without executing agents. | Unit test plus manual UI test |
-| Findings | Completed run displays persona findings, source links or assumption markers, severity, and recommended action. | Fixture render test |
-| Synthesis | Completed run displays top findings, dissent, evidence gaps, and next actions. | Fixture render test |
+| Findings | Completed run displays persona findings, source links or assumption markers, severity, and recommended action. | Persisted run render test |
+| Synthesis | Completed run displays top findings, dissent, evidence gaps, and next actions. | Persisted run render test |
 | Prompt comparison | Prompt Builder lane can attach prompt score and outcome delta to a run. | Repository test |
 | Export comparison | Agent Builder-style export writes package artifact without becoming app storage. | Smoke test |
 
@@ -580,7 +579,7 @@ Use browser verification after WP-03:
 
 - `/councils` at desktop width.
 - `/councils/new` at desktop and mobile width.
-- `/councils/[runId]` with a synthetic-heavy fixture.
+- `/councils/[runId]` with a persisted synthetic-heavy test run.
 - Confirm warning text, forms, status controls, and tables do not overlap.
 
 ## Risks

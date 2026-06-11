@@ -118,7 +118,7 @@ Each repo should have a default roster that can be generated and then edited.
 Generation inputs:
 
 - `README`, `package.json`, `pyproject.toml`, app docs, and architecture docs.
-- Existing personas in `src/lib/fixtures.ts` or future `data/personas.json`.
+- Saved personas in `data/personas.json`.
 - Prior council reports under `councils/`.
 - Build-loop memory and Codex memory summaries for that repo.
 - User-provided roles, target buyers, users, reviewers, or constraints.
@@ -563,7 +563,9 @@ Status: landed.
   measurement plans, synthesis, prompt versions, outcome comparisons, and
   events.
 - Added local JSON storage behind repository interfaces.
-- Added fixture seeding for one repo roster and one completed council run.
+- Removed live fixture seeding from the app. Historical council artifacts remain
+  available for audit context, but runtime rosters and runs must come from
+  local JSON persistence.
 
 Acceptance:
 
@@ -609,8 +611,8 @@ Status: command-packet lane landed; live launch remains open.
 - Local/manual and Rally command packets are generated from run state.
 - Live low/medium/high launch adapters remain gated until explicit approval,
   cost controls, and rate limits are added.
-- Assignment artifacts and run events are represented in the domain and seeded
-  fixture run; live assignment ingestion remains open.
+- Assignment artifacts and run events are represented in the domain; live
+  assignment ingestion remains open.
 
 Acceptance:
 

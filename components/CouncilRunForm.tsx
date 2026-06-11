@@ -9,9 +9,22 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
   const roster = rosters[0];
   const defaultPersonas = new Set(roster?.default_levels.medium ?? []);
 
+  if (!roster) {
+    return (
+      <section className="rounded-md border border-dashed border-line-strong bg-surface p-6">
+        <p className="text-xs font-semibold uppercase text-muted">Persona councils</p>
+        <h1 className="mt-2 text-2xl font-semibold text-ink">No roster configured</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
+          Add or generate a repository persona roster before planning a council
+          run. This app does not create reviews from hidden sample data.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <form action={createCouncilRunAction} className="space-y-8">
-      <input type="hidden" name="roster_id" value={roster?.id ?? ""} />
+      <input type="hidden" name="roster_id" value={roster.id} />
 
       <section className="rounded-md border border-line bg-surface p-5">
         <div className="max-w-3xl">
@@ -34,7 +47,7 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
               minLength={10}
               rows={5}
               className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-2 focus:outline-offset-2 focus:outline-current"
-              defaultValue="Review the councils workflow for evidence trust, synthetic disclosure, and launch readiness."
+              placeholder="Describe what the council should review and what decision it should support."
             />
           </label>
 
@@ -87,7 +100,7 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
               name="target_artifacts"
               rows={4}
               className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-2 focus:outline-offset-2 focus:outline-current"
-              defaultValue={"app/councils\nsrc/lib/council.ts\ndocs/plans/persona-review-capability.md"}
+              placeholder={"app/path-or-doc.md\nsrc/module-or-flow.ts"}
             />
           </label>
         </div>
@@ -123,7 +136,7 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
             <input
               name="decision_supported"
               className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
-              defaultValue="Decide whether this workflow is ready for a medium-depth persona review."
+              placeholder="Decision the run should support"
             />
           </label>
           <label className="block">
@@ -131,7 +144,7 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
             <input
               name="reviewer_quality_gate"
               className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
-              defaultValue="Evidence gaps and dissent must be visible before completion."
+              placeholder="Quality bar before this run can be treated as complete"
             />
           </label>
           <label className="block md:col-span-2">
@@ -139,8 +152,9 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
             <textarea
               name="success_signals"
               rows={3}
+              required
               className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
-              defaultValue={"Persona findings cite evidence or assumptions\nSynthetic status is visible\nRecommended actions are specific"}
+              placeholder={"Findings cite evidence or assumptions\nRecommended actions are specific"}
             />
           </label>
           <label className="block md:col-span-2">
@@ -148,8 +162,9 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
             <textarea
               name="failure_signals"
               rows={3}
+              required
               className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
-              defaultValue={"Findings cannot be traced to evidence\nSynthetic claims read as real-user evidence\nNo clear next action"}
+              placeholder={"Findings cannot be traced to evidence\nNo clear next action"}
             />
           </label>
           <label className="block md:col-span-2">
@@ -157,8 +172,9 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
             <textarea
               name="evidence_required"
               rows={3}
+              required
               className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
-              defaultValue={"Target files\nPersona roster\nPrior panel findings"}
+              placeholder={"Target files\nPersona roster\nRelevant prior research"}
             />
           </label>
         </div>

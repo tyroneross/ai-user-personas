@@ -50,7 +50,7 @@ Codex-owned architecture/data scope:
 
 - `src/lib/council.ts`
 - `src/lib/council-repository.ts`
-- `src/lib/council-fixtures.ts`
+- `src/lib/council-repository.server.ts`
 - `src/lib/persona-plan-adapter.ts`
 - `schemas/*.schema.json`
 - `data/*.json`
