@@ -1,7 +1,7 @@
 {
   "name": "persona-lab",
-  "version": "0.1.0",
-  "description": "Launch task-specific AI persona panels for UI, product, and workflow review.",
+  "version": "0.2.0",
+  "description": "Task-specific AI persona panels plus a recallable global persona library. CLI + Claude Code/Codex plugin.",
   "author": {
     "name": "Tyrone Ross"
   },

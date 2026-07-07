@@ -114,7 +114,7 @@ persona-lab/
 
 ## Persona schema
 
-Canonical contract: `../../schemas/persona.schema.json` (v1.1.0). Load-bearing
+Canonical contract: `schemas/persona.schema.json` (v1.1.0). Load-bearing
 fields are goals, behaviors, frustrations, motivations, needs, and
 `job_to_be_done`; demographics are optional decoration. `provenance`
 (`proto | qualitative | synthetic-grounded | synthetic-assumed`) and `anti_goals`
