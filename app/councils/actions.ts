@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import type { CouncilType, ReviewLevel, ReviewRunStatus } from "@lib/council";
 import { reviewLevelBounds } from "@lib/council";
 import { fileCouncilRepository } from "@lib/council-repository.server";
+import { filePersonaRepository } from "@lib/persona-repository.server";
 import { buildOutcomeComparison } from "@lib/prompt-comparison";
 import { plannerOutputToDraft, runPersonaPlanner } from "@lib/persona-plan-adapter";
+import { buildRosterInputFromPersonas } from "@lib/council-library-adapter";
 
 function text(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
@@ -32,6 +34,7 @@ export async function createCouncilRunAction(formData: FormData) {
   const request = text(formData, "request");
   const targetArtifacts = listFromText(text(formData, "target_artifacts"));
   const selectedPersonaIds = formData.getAll("persona_ids").map(String);
+  const runsPerPersona = Number(text(formData, "runs_per_persona")) || 1;
   const usePlanner = formData.get("use_planner") === "on";
 
   const roster = await fileCouncilRepository.getRoster(rosterId);
@@ -50,7 +53,7 @@ export async function createCouncilRunAction(formData: FormData) {
       coordinationMode: text(formData, "coordination_mode") as "local" | "host_subagents" | "rally",
     });
     const bundle = await fileCouncilRepository.createRun(
-      { ...draft.run, persona_ids: personaIds },
+      { ...draft.run, persona_ids: personaIds, runs_per_persona: runsPerPersona },
       draft.measurementPlan,
     );
     revalidatePath("/councils");
@@ -66,6 +69,7 @@ export async function createCouncilRunAction(formData: FormData) {
       target_artifacts: targets,
       roster_id: roster.id,
       persona_ids: personaIds,
+      runs_per_persona: runsPerPersona,
       coordination_mode: text(formData, "coordination_mode") as "local" | "host_subagents" | "rally",
     },
     {
@@ -87,6 +91,23 @@ export async function createCouncilRunAction(formData: FormData) {
 
   revalidatePath("/councils");
   redirect(`/councils/${bundle.run.id}`);
+}
+
+export async function createRosterFromLibraryAction(formData: FormData) {
+  const name = text(formData, "roster_name") || undefined;
+  const selectedIds = formData.getAll("persona_ids").map(String).filter(Boolean);
+
+  const { personas } = await filePersonaRepository.exportPersonas(
+    selectedIds.length > 0 ? selectedIds : undefined,
+  );
+  const usable = personas.filter((p) => p.status !== "archived");
+
+  const roster = await fileCouncilRepository.createRoster(
+    buildRosterInputFromPersonas(usable, { repoPath: process.cwd(), name }),
+  );
+
+  revalidatePath("/councils");
+  redirect(`/councils/new?roster=${roster.id}`);
 }
 
 export async function updateCouncilRunStatusAction(formData: FormData) {

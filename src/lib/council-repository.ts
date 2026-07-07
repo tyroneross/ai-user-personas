@@ -17,6 +17,7 @@ import type {
   RunStatusUpdateInput,
   ReviewRunStatus,
 } from "./council";
+import { runsPerPersonaBounds } from "./council";
 import { canTransitionStatus, assertValid, validateMeasurementPlan, validateRoster, validateRun } from "./council-validation";
 import { prefixedId } from "./id";
 
@@ -170,8 +171,13 @@ export function createCouncilRepository(
       const timestamp = nowIso();
       const runId = prefixedId("run", `${input.council_type}-${input.level}`);
       const measurementPlanId = prefixedId("measurement", runId);
+      const runsPerPersona = Math.min(
+        Math.max(Math.round(input.runs_per_persona ?? 1), runsPerPersonaBounds.min),
+        runsPerPersonaBounds.max,
+      );
       const run: PersonaReviewRun = {
         ...input,
+        runs_per_persona: runsPerPersona,
         schema_version: "1.0.0",
         id: runId,
         measurement_plan_id: measurementPlanId,
@@ -192,17 +198,19 @@ export function createCouncilRepository(
       };
       assertValid(validateMeasurementPlan(measurementPlan), "Measurement plan");
 
-      const assignments: PersonaAssignment[] = run.persona_ids.map((personaId) => ({
-        schema_version: "1.0.0",
-        id: prefixedId("assignment", `${run.id}-${personaId}`),
-        run_id: run.id,
-        persona_id: personaId,
-        model_tier: "haiku",
-        status: "queued",
-        evidence_gaps: [],
-        created_at: timestamp,
-        updated_at: timestamp,
-      }));
+      const assignments: PersonaAssignment[] = run.persona_ids.flatMap((personaId) =>
+        Array.from({ length: runsPerPersona }, (_, pass) => ({
+          schema_version: "1.0.0" as const,
+          id: prefixedId("assignment", `${run.id}-${personaId}-${pass}`),
+          run_id: run.id,
+          persona_id: personaId,
+          model_tier: "haiku" as const,
+          status: "queued" as const,
+          evidence_gaps: [],
+          created_at: timestamp,
+          updated_at: timestamp,
+        })),
+      );
 
       store.runs.unshift(run);
       store.measurementPlans.unshift(measurementPlan);
@@ -213,8 +221,21 @@ export function createCouncilRepository(
         actor: "codex",
         status_after: "draft",
         outcome: "success",
-        message: "Draft persona review run created.",
+        message:
+          runsPerPersona > 1
+            ? `Draft persona review run created (${run.persona_ids.length} personas x ${runsPerPersona} passes = ${assignments.length} reviews).`
+            : "Draft persona review run created.",
       });
+
+      if (assignments.length > runsPerPersonaBounds.warnAbove) {
+        await this.appendRunEvent({
+          run_id: run.id,
+          operation: "token_cost_warning",
+          actor: "system",
+          outcome: "warning",
+          message: `${assignments.length} total review passes exceeds ${runsPerPersonaBounds.warnAbove}; expect significant token usage. Reduce personas or runs per persona to lower cost.`,
+        });
+      }
 
       const bundle = await this.getRunBundle(run.id);
       if (!bundle) throw new Error(`Run ${run.id} could not be loaded after create.`);

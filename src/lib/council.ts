@@ -99,6 +99,8 @@ export type PersonaReviewRun = {
   target_artifacts: string[];
   roster_id: string;
   persona_ids: string[];
+  /** Independent review passes per persona (1-100). Defaults to 1. */
+  runs_per_persona?: number;
   measurement_plan_id: string;
   status: ReviewRunStatus;
   coordination_mode: CoordinationMode;
@@ -297,10 +299,16 @@ export type PersonaMeasurementPlanDraftInput = Omit<
 >;
 
 export const reviewLevelBounds: Record<ReviewLevel, { min: number; max: number }> = {
-  low: { min: 2, max: 3 },
-  medium: { min: 4, max: 7 },
-  high: { min: 8, max: 20 },
+  low: { min: 1, max: 3 },
+  medium: { min: 2, max: 6 },
+  high: { min: 3, max: 20 },
 };
+
+/**
+ * A persona can be reviewed multiple times (independent passes) within one run.
+ * Above WARN, the run should surface a token-cost warning.
+ */
+export const runsPerPersonaBounds = { min: 1, max: 100, warnAbove: 20 } as const;
 
 export const statusTransitions: Record<ReviewRunStatus, ReviewRunStatus[]> = {
   draft: ["ready", "archived"],

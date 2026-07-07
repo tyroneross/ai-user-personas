@@ -1,13 +1,13 @@
 import type { RepoPersonaRoster } from "@lib/council";
 import { councilTypeLabels, reviewLevelLabels } from "@lib/council";
 import { createCouncilRunAction } from "@/app/councils/actions";
+import RosterPassSelector from "./RosterPassSelector";
 
 const councilTypes = Object.entries(councilTypeLabels);
 const reviewLevels = Object.entries(reviewLevelLabels);
 
 export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster[] }) {
   const roster = rosters[0];
-  const defaultPersonas = new Set(roster?.default_levels.medium ?? []);
 
   if (!roster) {
     return (
@@ -105,27 +105,10 @@ export default function CouncilRunForm({ rosters }: { rosters: RepoPersonaRoster
           </label>
         </div>
 
-        <aside className="rounded-md border border-line bg-surface p-4">
-          <h2 className="text-sm font-semibold text-ink">Roster</h2>
-          <p className="mt-1 text-sm text-muted">{roster?.repo_slug ?? "No roster"}</p>
-          <div className="mt-4 space-y-3">
-            {roster?.personas.map((persona) => (
-              <label key={persona.id} className="flex gap-3 text-sm text-ink-soft">
-                <input
-                  type="checkbox"
-                  name="persona_ids"
-                  value={persona.id}
-                  defaultChecked={defaultPersonas.has(persona.id)}
-                  className="mt-1"
-                />
-                <span>
-                  <span className="block font-medium text-ink">{persona.name}</span>
-                  <span className="block text-xs text-muted">{persona.lens} / {persona.role}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </aside>
+        <RosterPassSelector
+          personas={roster.personas}
+          defaultSelected={roster.default_levels.medium ?? []}
+        />
       </section>
 
       <section className="rounded-md border border-line bg-surface p-5">

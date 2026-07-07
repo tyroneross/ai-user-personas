@@ -128,8 +128,11 @@ export default function CouncilRunDetail({
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <div className="rounded-md border border-line bg-surface p-4">
-          <dt className="text-xs font-medium text-muted">Personas</dt>
-          <dd className="mt-2 text-2xl font-semibold text-ink">{bundle.assignments.length}</dd>
+          <dt className="text-xs font-medium text-muted">Personas / passes</dt>
+          <dd className="mt-2 text-2xl font-semibold text-ink">
+            {new Set(bundle.assignments.map((a) => a.persona_id)).size}
+            <span className="text-base font-normal text-muted"> / {bundle.assignments.length}</span>
+          </dd>
         </div>
         <div className="rounded-md border border-line bg-surface p-4">
           <dt className="text-xs font-medium text-muted">Findings</dt>
