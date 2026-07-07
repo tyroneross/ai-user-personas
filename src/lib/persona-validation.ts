@@ -104,6 +104,14 @@ export function normalizePersonaInput(value: unknown, existing?: Persona): Perso
       })
     : [];
 
+  const provenanceValues = [
+    "proto",
+    "qualitative",
+    "synthetic-grounded",
+    "synthetic-assumed",
+  ];
+  const antiGoals = textList(record.anti_goals);
+
   return {
     status: status(record.status),
     name: text(record.name),
@@ -111,6 +119,11 @@ export function normalizePersonaInput(value: unknown, existing?: Persona): Perso
     role: text(record.role),
     summary: text(record.summary),
     primary_goal: text(record.primary_goal),
+    job_to_be_done: text(record.job_to_be_done) || undefined,
+    anti_goals: antiGoals.length ? antiGoals : undefined,
+    provenance: provenanceValues.includes(record.provenance as string)
+      ? (record.provenance as PersonaCreateInput["provenance"])
+      : undefined,
     goals: textList(record.goals),
     frustrations: textList(record.frustrations),
     motivations: textList(record.motivations),
@@ -142,8 +155,8 @@ export function normalizePersonaInput(value: unknown, existing?: Persona): Perso
 export function validatePersona(persona: Persona): PersonaValidationResult {
   const errors: PersonaValidationError[] = [];
 
-  if (persona.schema_version !== "1.0.0") {
-    errors.push(error("schema_version", "Persona schema_version must be 1.0.0."));
+  if (persona.schema_version !== "1.0.0" && persona.schema_version !== "1.1.0") {
+    errors.push(error("schema_version", "Persona schema_version must be 1.0.0 or 1.1.0."));
   }
   if (!nonEmpty(persona.id)) errors.push(error("id", "Persona id is required."));
   if (!statuses.includes(persona.status)) errors.push(error("status", "Persona status is invalid."));

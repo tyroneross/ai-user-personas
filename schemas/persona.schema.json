@@ -28,7 +28,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.0.0"
+      "enum": ["1.0.0", "1.1.0"]
     },
     "id": {
       "type": "string",
@@ -55,8 +55,23 @@
     "primary_goal": {
       "$ref": "#/$defs/non_empty_string"
     },
+    "job_to_be_done": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 400,
+      "description": "JTBD job-story: When [situation], I want to [motivation], so I can [outcome]."
+    },
     "goals": {
       "$ref": "#/$defs/non_empty_string_list"
+    },
+    "anti_goals": {
+      "$ref": "#/$defs/non_empty_string_list",
+      "description": "What would make this persona abandon or distrust the product."
+    },
+    "provenance": {
+      "type": "string",
+      "enum": ["proto", "qualitative", "synthetic-grounded", "synthetic-assumed"],
+      "description": "Basis for this persona: proto (team assumptions), qualitative (interviews), synthetic-grounded (LLM grounded in real data), synthetic-assumed (LLM assumption, hypothesis only)."
     },
     "frustrations": {
       "$ref": "#/$defs/non_empty_string_list"

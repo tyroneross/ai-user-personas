@@ -1,20 +1,25 @@
 # Persona Selection Reference
 
-## Default Roster For UI Review
+## Default Critique Lenses
 
-Use this when the request is about a UI, workflow, onboarding path, form,
-dashboard, or interactive product surface:
+Lead with these six research-backed lenses. Pick 4 to 6 by MECE coverage of
+goals, jobs-to-be-done, and risk, not by demographics. Fewer, sharply distinct
+lenses beat many overlapping ones.
 
-- Product manager: outcome fit, prioritization, adoption, activation.
-- UX designer or researcher: comprehension, flow, interaction cost, error
-  recovery.
-- Skeptical target user: immediate value, trust, task completion, abandonment.
-- Accessibility reviewer: keyboard flow, semantics, contrast, cognitive load,
-  inclusive language.
-- Frontend engineer: implementation feasibility, states, responsiveness,
-  performance, edge cases.
+1. Novice / first-run user: comprehension, initial value, onboarding, first
+   task completion.
+2. Power user / expert: speed, density, shortcuts, repeat workflows, ceiling.
+3. Skeptic / adversary / red-team: trust, failure modes, abandonment triggers,
+   what breaks or misleads. REQUIRED in every panel.
+4. Accessibility / constraint-bound user: keyboard flow, semantics, contrast,
+   cognitive load, inclusive language, low-bandwidth or degraded conditions.
+5. Decision-maker / buyer: outcome fit, proof needs, procurement, ROI,
+   objections.
+6. Domain specialist: correctness, safety, and conventions of the specialized
+   market the product serves.
 
-Add a domain expert when the product serves a specialized market.
+The red-team lens is the structural counter to LLM positivity bias. Never omit
+it. Add a domain specialist when the product serves a specialized market.
 
 ## Role Catalog
 
@@ -55,6 +60,31 @@ Domain-specific:
 - Education leader: learning outcomes, accessibility, classroom operations.
 - Developer platform user: docs, API clarity, errors, local setup.
 - Enterprise buyer: security review, procurement, admin controls, ROI.
+
+## Independence And Anti-Sycophancy
+
+These rules make the panel worth running. Skip them and personas converge to one
+agreeable voice that invents findings.
+
+- Require a red-team lens. Every panel includes at least one adversarial /
+  red-team perspective. Sycophancy and positivity bias are the dominant LLM
+  failure mode; the red-team lens is the structural counter.
+- Instruct anti-goals. Each persona states what would make this user abandon,
+  distrust, or reject the product, not only what would delight them.
+- Allow abstention over fabrication. LLMs fabricate roughly half the time
+  instead of saying "I don't know". A persona that cannot judge a point must
+  answer "cannot judge from available evidence" or "no concern", never invent a
+  finding.
+- Engineer independence. Distinct personas collapse into a homogeneous mode when
+  they share context or a status hierarchy. Run each persona's critique in a
+  separate context with no shared transcript, and synthesize only after all
+  independent passes complete.
+- Preserve conflicts. Synthesis keeps opposing findings as explicit tradeoffs,
+  for example power user wants density versus novice wants simplicity. Never
+  average dissent away; keep dissenting critical findings.
+- Label provenance. Every persona and every finding carries whether it is
+  grounded in real evidence or is a model assumption. Ungrounded output is
+  labeled an assumption. The panel is a hypothesis, not validation.
 
 ## Current Research Triggers
 

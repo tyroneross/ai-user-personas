@@ -1,6 +1,7 @@
 import "server-only";
 
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import type {
   Persona,
@@ -8,29 +9,39 @@ import type {
   PersonaExport,
   PersonaFilters,
   PersonaUpdateInput,
+  SchemaVersion,
 } from "./persona";
 import type { PersonaRepository } from "./repository";
 import { matchesPersonaFilters, toPersonaSummary } from "./repository";
 import { personaId } from "./id";
 import { assertValidPersona } from "./persona-validation";
 
+const SCHEMA_VERSION: SchemaVersion = "1.1.0";
+
 type PersonaFile = {
-  schema_version: "1.0.0";
+  schema_version: SchemaVersion;
   personas: Persona[];
 };
 
-const dataDir = path.join(process.cwd(), "data");
-const personasPath = path.join(dataDir, "personas.json");
+/**
+ * The persona library is shared with the `persona` CLI and coding agents.
+ * Default: ~/.persona-lab (global, recallable from any repo).
+ * Override with PERSONA_LAB_HOME (e.g. point at the repo's data/ for local-only).
+ */
+const libraryHome = process.env.PERSONA_LAB_HOME
+  ? path.resolve(process.env.PERSONA_LAB_HOME)
+  : path.join(os.homedir(), ".persona-lab");
+const personasPath = path.join(libraryHome, "personas.json");
 
 function emptyFile(): PersonaFile {
-  return { schema_version: "1.0.0", personas: [] };
+  return { schema_version: SCHEMA_VERSION, personas: [] };
 }
 
 async function readPersonaFile(): Promise<PersonaFile> {
   try {
     const parsed = JSON.parse(await readFile(personasPath, "utf8")) as PersonaFile;
     return {
-      schema_version: "1.0.0",
+      schema_version: parsed.schema_version ?? SCHEMA_VERSION,
       personas: Array.isArray(parsed.personas) ? parsed.personas : [],
     };
   } catch (error) {
@@ -41,7 +52,7 @@ async function readPersonaFile(): Promise<PersonaFile> {
 
 async function writePersonaFile(file: PersonaFile): Promise<void> {
   file.personas.forEach(assertValidPersona);
-  await mkdir(dataDir, { recursive: true });
+  await mkdir(libraryHome, { recursive: true });
   const tempPath = `${personasPath}.${process.pid}.${Date.now()}.tmp`;
   await writeFile(tempPath, `${JSON.stringify(file, null, 2)}\n`);
   await rename(tempPath, personasPath);
@@ -66,7 +77,7 @@ export const filePersonaRepository: PersonaRepository = {
     const now = new Date().toISOString();
     const persona: Persona = {
       ...input,
-      schema_version: "1.0.0",
+      schema_version: SCHEMA_VERSION,
       id: personaId(input.name),
       created_at: now,
       updated_at: now,
@@ -85,7 +96,7 @@ export const filePersonaRepository: PersonaRepository = {
       ...file.personas[index],
       ...input,
       id,
-      schema_version: "1.0.0",
+      schema_version: SCHEMA_VERSION,
       created_at: file.personas[index].created_at,
       updated_at: new Date().toISOString(),
     };
@@ -104,6 +115,6 @@ export const filePersonaRepository: PersonaRepository = {
     const personas = ids
       ? file.personas.filter((persona) => ids.includes(persona.id))
       : file.personas;
-    return { schema_version: "1.0.0", personas };
+    return { schema_version: SCHEMA_VERSION, personas };
   },
 };
