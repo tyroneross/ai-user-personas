@@ -4,6 +4,25 @@ import { confidenceLabel, formatDate } from "@lib/format";
 import ConfidenceMeter from "./ConfidenceMeter";
 import StatusPill from "./StatusPill";
 
+const PROVENANCE_LABEL: Record<string, string> = {
+  proto: "proto — team assumptions",
+  qualitative: "qualitative — real research",
+  "synthetic-grounded": "synthetic, grounded in data",
+  "synthetic-assumed": "synthetic — hypothesis, not validated",
+};
+
+function ProvenanceBadge({ provenance }: { provenance: string }) {
+  const hypothesis = provenance.startsWith("synthetic");
+  return (
+    <span
+      className={`text-xs font-medium ${hypothesis ? "text-warn" : "text-muted"}`}
+      title="Basis for this persona"
+    >
+      {PROVENANCE_LABEL[provenance] ?? provenance}
+    </span>
+  );
+}
+
 function Section({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) return null;
   return (
@@ -60,10 +79,16 @@ export default function PersonaDetail({ persona }: { persona: Persona }) {
       <header className="border-b border-line pb-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs text-muted">
+            <div className="flex items-center gap-2 text-xs text-muted flex-wrap">
               <StatusPill status={persona.status} />
               <span aria-hidden>·</span>
               <span>updated {formatDate(persona.updated_at)}</span>
+              {persona.provenance && (
+                <>
+                  <span aria-hidden>·</span>
+                  <ProvenanceBadge provenance={persona.provenance} />
+                </>
+              )}
             </div>
             <h1
               id="persona-name"
@@ -101,6 +126,12 @@ export default function PersonaDetail({ persona }: { persona: Persona }) {
           Primary goal
         </h3>
         <p className="mt-2 text-lg text-ink">{persona.primary_goal}</p>
+        {persona.job_to_be_done && (
+          <p className="mt-3 text-sm text-ink-soft max-w-2xl">
+            <span className="font-medium text-muted">Job to be done: </span>
+            {persona.job_to_be_done}
+          </p>
+        )}
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
@@ -109,6 +140,9 @@ export default function PersonaDetail({ persona }: { persona: Persona }) {
         <Section title="Motivations" items={persona.motivations} />
         <Section title="Behaviors" items={persona.behaviors} />
         <Section title="Needs" items={persona.needs} />
+        {persona.anti_goals && persona.anti_goals.length > 0 && (
+          <Section title="Anti-goals (abandon / distrust triggers)" items={persona.anti_goals} />
+        )}
         {persona.channels && persona.channels.length > 0 && (
           <Section title="Channels" items={persona.channels} />
         )}

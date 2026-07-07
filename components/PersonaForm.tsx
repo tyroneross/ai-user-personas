@@ -2,9 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Persona, SourceType } from "@lib/persona";
+import type { Persona, Provenance, SourceType } from "@lib/persona";
 
 type Mode = "create" | "edit";
+
+const PROVENANCE_OPTIONS: { value: "" | Provenance; label: string }[] = [
+  { value: "", label: "unset" },
+  { value: "proto", label: "proto — team assumptions" },
+  { value: "qualitative", label: "qualitative — interviews / real research" },
+  { value: "synthetic-grounded", label: "synthetic-grounded — AI, grounded in real data" },
+  { value: "synthetic-assumed", label: "synthetic-assumed — AI assumption (hypothesis only)" },
+];
 
 type FormState = {
   name: string;
@@ -12,11 +20,14 @@ type FormState = {
   role: string;
   summary: string;
   primary_goal: string;
+  job_to_be_done: string;
   goals: string;
   frustrations: string;
   motivations: string;
   behaviors: string;
   needs: string;
+  anti_goals: string;
+  provenance: "" | Provenance;
   scenarios: string;
   evidence_summary: string;
   evidence_source: string;
@@ -46,11 +57,14 @@ function initialFor(persona: Persona | undefined): FormState {
     role: persona?.role ?? "",
     summary: persona?.summary ?? "",
     primary_goal: persona?.primary_goal ?? "",
+    job_to_be_done: persona?.job_to_be_done ?? "",
     goals: (persona?.goals ?? []).join("\n"),
     frustrations: (persona?.frustrations ?? []).join("\n"),
     motivations: (persona?.motivations ?? []).join("\n"),
     behaviors: (persona?.behaviors ?? []).join("\n"),
     needs: (persona?.needs ?? []).join("\n"),
+    anti_goals: (persona?.anti_goals ?? []).join("\n"),
+    provenance: persona?.provenance ?? "",
     scenarios: (persona?.scenarios ?? [])
       .map((s) => `${s.title} :: ${s.description}`)
       .join("\n"),
@@ -115,11 +129,14 @@ function buildPersonaPayload(state: FormState, initial?: Persona) {
     role: state.role.trim(),
     summary: state.summary.trim(),
     primary_goal: state.primary_goal.trim(),
+    job_to_be_done: state.job_to_be_done.trim() || undefined,
     goals: lines(state.goals),
     frustrations: lines(state.frustrations),
     motivations: lines(state.motivations),
     behaviors: lines(state.behaviors),
     needs: lines(state.needs),
+    anti_goals: lines(state.anti_goals),
+    provenance: state.provenance || undefined,
     scenarios: parseScenarios(state.scenarios),
     evidence: [
       {
@@ -249,6 +266,19 @@ export default function PersonaForm({
         />
       </Field>
 
+      <Field
+        label="Job to be done"
+        hint="When [situation], I want to [motivation], so I can [outcome]."
+      >
+        <textarea
+          value={state.job_to_be_done}
+          onChange={(e) => update("job_to_be_done", e.target.value)}
+          rows={2}
+          className={inputClass(undefined)}
+          placeholder="When evaluating a new tool, I want to see its data controls up front, so I can approve without a long back-and-forth."
+        />
+      </Field>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ListField
           label="Goals"
@@ -279,6 +309,11 @@ export default function PersonaForm({
           value={state.needs}
           onChange={(v) => update("needs", v)}
           error={showError("needs")}
+        />
+        <ListField
+          label="Anti-goals"
+          value={state.anti_goals}
+          onChange={(v) => update("anti_goals", v)}
         />
       </div>
 
@@ -367,6 +402,23 @@ export default function PersonaForm({
           </select>
         </Field>
       </div>
+
+      <Field
+        label="Provenance"
+        hint="The basis for this persona. synthetic-* means hypothesis, not validated research."
+      >
+        <select
+          value={state.provenance}
+          onChange={(e) => update("provenance", e.target.value as FormState["provenance"])}
+          className={inputClass(undefined)}
+        >
+          {PROVENANCE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </Field>
 
       <Field label="Tags" hint="Comma-separated">
         <input
