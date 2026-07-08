@@ -163,6 +163,41 @@ export default function PersonaForm({
   const [state, setState] = useState<FormState>(() => initialFor(initial));
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [instruction, setInstruction] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [genNote, setGenNote] = useState<string | null>(null);
+
+  async function handleGenerate() {
+    if (instruction.trim().length < 4 || generating) return;
+    setGenerating(true);
+    setGenNote(null);
+    try {
+      const response = await fetch("/api/personas/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction }),
+      });
+      const body = (await response.json()) as {
+        persona?: Persona;
+        source?: string;
+        note?: string;
+        error?: { message?: string };
+      };
+      if (!response.ok || !body.persona) {
+        throw new Error(body.error?.message ?? "Generation failed.");
+      }
+      setState(initialFor(body.persona));
+      setGenNote(
+        body.source === "scaffold"
+          ? (body.note ?? "Prefilled a scaffold — fill in the details.")
+          : `Generated with ${body.source}. Review and edit before saving — hypothesis, not validated.`,
+      );
+    } catch (error) {
+      setGenNote(error instanceof Error ? error.message : "Generation failed.");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   const errors = useMemo(() => validate(state), [state]);
   const dirty = useMemo(
@@ -220,6 +255,45 @@ export default function PersonaForm({
           <code className="text-xs">schemas/persona.schema.json</code>.
         </p>
       </header>
+
+      {mode === "create" && (
+        <section className="rounded-md border border-line bg-surface p-4">
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Generate from an instruction
+            </span>
+            <textarea
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              rows={2}
+              className={inputClass(undefined)}
+              placeholder="e.g. a skeptical enterprise security admin reviewing an SSO login flow"
+            />
+          </label>
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={generating || instruction.trim().length < 4}
+              className={
+                generating || instruction.trim().length < 4
+                  ? "rounded-md bg-line px-4 py-2 text-sm font-medium text-muted cursor-not-allowed"
+                  : "rounded-md bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink-soft transition"
+              }
+            >
+              {generating ? "Generating…" : "Generate & prefill"}
+            </button>
+            <span className="text-xs text-muted">
+              Runs a local model via the agent harness. You edit before saving.
+            </span>
+          </div>
+          {genNote && (
+            <p className="mt-2 text-xs text-muted" role="status">
+              {genNote}
+            </p>
+          )}
+        </section>
+      )}
 
       <Field label="Name" error={showError("name")}>
         <input
